@@ -1,0 +1,39 @@
+-
+  name: Install Docker ansible unzip wget
+  hosts: linux
+  become: yes
+  tasks:
+    - name: Install packages
+      become: yes
+      apt:
+        name: "{{ packages }}"
+      vars:
+        packages:
+          - ansible
+          - unzip
+          - wget
+          - python3-pip
+        state: latest
+   # - name: Add Docker privileges
+    #  become: yes
+     # command: usermod -G docker ubuntu
+    - name: Install pip
+      easy_install:
+        name: pip
+        state: latest
+    - name: Install aws cli
+      become: yes
+      pip:
+        name: "{{ packages }}"
+        executable: pip3
+        state: present
+      vars:
+        packages:
+          - awscli
+          - awsebcli
+    - name: terraform install
+      become: yes
+      unarchive:
+        src: https://releases.hashicorp.com/terraform/${TERRAFORM_VERSION}/terraform_${TERRAFORM_VERSION}_linux_amd64.zip
+        dest: /usr/bin
+        remote_src: True

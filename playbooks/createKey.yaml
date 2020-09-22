@@ -1,0 +1,15 @@
+-
+  name: Generate SSH Key
+  hosts: linux
+  tasks:
+    - name: create ssh dir
+      file:
+        path: /home/ubuntu/.ssh
+        state: directory
+    - name: generate key
+      openssh_keypair:
+        path: /home/ubuntu/.ssh/mykey
+        state: present
+    - name: change ownership of the file
+      command: chown -R ubuntu:ubuntu /home/ubuntu/.ssh
+      become: yes

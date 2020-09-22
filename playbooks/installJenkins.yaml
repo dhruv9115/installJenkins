@@ -1,0 +1,82 @@
+- name: Install Jenkins
+  hosts: linux
+  tasks:
+        - name: Ensure the jenkins apt repository key is installed
+          become: yes
+          apt_key:
+            url: https://pkg.jenkins.io/debian-stable/jenkins.io.key
+            state: present
+            validate_certs: no
+
+        - name: Ensure the repository is configured
+          become: yes
+          apt_repository:
+            repo: deb https://pkg.jenkins.io/debian-stable binary/
+            state: present
+
+        #- name: Install Jenkins
+        #  become: yes
+        #  apt:
+        #    name: jenkins
+        #    state: present
+        #    allow_unauthenticated: yes
+        #    force_apt_get: "yes"
+        - name: Create docker network
+          become: yes
+          ignore_errors: yes
+          shell: docker network create jenkins
+
+        - name: Create Docker client TLS certificates
+          become: yes
+          ignore_errors: yes
+          shell: docker volume create jenkins-docker-certs
+
+        - name: Persist the Jenkins data
+          become: yes
+          ignore_errors: yes
+          shell: docker volume create jenkins-data
+
+        - name: Run Docker container
+          become: yes
+          shell: docker container run \
+            --name jenkins-docker \
+            --rm \
+            --detach \
+            --privileged \
+            --network jenkins \
+            --network-alias docker \
+            --env DOCKER_TLS_CERTDIR=/certs \
+            --volume jenkins-docker-certs:/certs/client \
+            --volume jenkins-data:/var/jenkins_home \
+            --publish 2376:2376 \
+            docker:dind
+
+        - name: Run Docker BlueOcean
+          become: yes
+          shell: docker container run \
+            --name jenkins-blueocean \
+            --rm \
+            --detach \
+            --network jenkins \
+            --env DOCKER_HOST=tcp://docker:2376 \
+            --env DOCKER_CERT_PATH=/certs/client \
+            --env DOCKER_TLS_VERIFY=1 \
+            --publish 8080:8080 \
+            --publish 50000:50000 \
+            --volume jenkins-data:/var/jenkins_home \
+            --volume jenkins-docker-certs:/certs/client:ro \
+            -v /var/run/docker.sock:/var/run/docker.sock \
+            jenkinsci/blueocean
+
+
+
+
+
+        #- name: Get init password Jenkins
+        #  shell: cat /var/lib/jenkins/secrets/initialAdminPassword
+        #  changed_when: false
+        #  register: result
+
+        #- name: Print init password Jenkins
+        #  debug:
+        #    var: result.stdout

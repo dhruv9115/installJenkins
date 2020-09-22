@@ -1,0 +1,5 @@
+- name: Install OpenJDK Java
+  hosts: linux
+  roles:
+    - install-openjdk
+    - install-jenkins
